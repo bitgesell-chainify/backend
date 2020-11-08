@@ -105,6 +105,23 @@ Resources:
             Method: post
             RestApiId: !Ref BitgesellApi
 
+  CountAllVoutsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./v1
+      Handler: transactions.count_vouts
+      Runtime: python3.8
+      Role: arn:aws:iam::094102247400:role/CNFYDynamoBDFullAccessRole
+      Layers:
+        - arn:aws:lambda:eu-central-1:094102247400:layer:boto3-requests-layer:1
+      Events:
+        PostEvent:
+          Type: Api
+          Properties:
+            Path: /v1/utils/count-all-vouts
+            Method: post
+            RestApiId: !Ref BitgesellApi
+
   BitgesellApi:
     Type: AWS::Serverless::Api
     Properties:

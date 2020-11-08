@@ -276,18 +276,16 @@ class Parser:
         await self.save_vouts(data['vouts'])
 
         while 'LastEvaluatedKey' in data:
-            logger.info('')
             data = await self.get_vouts(last_key=data['LastEvaluatedKey'])
-            await self.save_vouts(data['vouts'])
-
+            if 'vouts' in data:
+                await self.save_vouts(data['vouts'])
+            else:
+                print('ERR', data)
+            # ERR {'error': 'bad request', 'headers': {'Access-Control-Allow-Origin': '*'}, 'message': "'LastEvaluatedKey'"}
         self.vouts_collected = True
         logger.info('Vouts successfully collected!')
 
     async def get_vouts(self, last_key):
-        if last_key:
-            print('LAST KEY', last_key)
-        else:
-            print('NO LAST KEY')
         try:
             res = requests.get(
                 'https://bitgesell.amrbz.org/v1/utils/vouts',
@@ -314,20 +312,18 @@ class Parser:
                 'address': vout['address'],
                 'value': vout['value']
             }
-        logger.info('Saved vouts batch: {}'.format(len(vouts)))
+        logger.info('Saved vouts batch: {} of {}'.format(
+            len(vouts),
+            len(self.vouts.keys())
+        ))
 
     async def start(self):
         # logger.info('Fetching cache data...')
         blockchain_height = await self.get_blockchain_height()
         last_saved_block_height = await self.get_last_saved_block_height()
-        # vouts = await self.get_all_vouts()
 
         while not self.vouts_collected:
             await asyncio.sleep(2)
-
-        logger.info('VOUTS COLLECTED')
-
-        return
 
         if blockchain_height:
             self.height = max(1, blockchain_height - self.blocks_to_check)
@@ -347,7 +343,7 @@ class Parser:
         while True:
             try:
                 last_block = await self.get_blockchain_height()
-                self.last_block =last_block
+                self.last_block = last_block
 
         #         if self.height > self.last_block:
         #             # DELETE TRANSACTI~ONS AND BLOCKS FROM DB

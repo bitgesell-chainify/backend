@@ -141,3 +141,44 @@ def get_transactions_by_address(event, context):
         return utils.bad_request(str(error))
 
     return utils.json_response(body=body, status=200)
+
+
+def count_vouts(event, context):
+    try:
+        dynamodb = boto3.resource(
+            'dynamodb',
+            region_name=event['stageVariables']['REGION_NAME'])
+        table = dynamodb.Table('BitgesellDB')
+
+        count = 0
+        scanned_count = 0
+
+        response = table.scan(
+            FilterExpression=Attr("PK").begins_with('TX#') &
+            Attr("SK").begins_with('VOUT#'),
+            Select="COUNT"
+        )
+
+        count += response['Count']
+        scanned_count += response['ScannedCount']
+
+        while 'LastEvaluatedKey' in response:
+            response = table.scan(
+                FilterExpression=Attr("PK").begins_with('TX#') &
+                Attr("SK").begins_with('VOUT#'),
+                Select="COUNT",
+                ExclusiveStartKey=response['LastEvaluatedKey']
+            )
+
+            count += response['Count']
+            scanned_count += response['ScannedCount']
+
+        body = {
+            'Count': count,
+            'ScannedCount': scanned_count
+        }
+
+    except Exception as error:
+        return utils.bad_request(str(error))
+
+    return utils.json_response(body=body, status=200)

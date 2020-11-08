@@ -3,6 +3,27 @@
     {
       "type": "aws-sam",
       "request": "direct-invoke",
+      "name": "api:transactions.count_vouts (python3.8)",
+      "invokeTarget": {
+        "target": "code",
+        "projectRoot": "v1",
+        "lambdaHandler": "transactions.count_vouts"
+      },
+      "lambda": {
+        "runtime": "python3.8",
+        "payload": {
+          "json": {
+            "stageVariables": {
+              "REGION_NAME": "eu-central-q"
+            }
+          }
+        },
+        "environmentVariables": {}
+      }
+    },
+    {
+      "type": "aws-sam",
+      "request": "direct-invoke",
       "name": "api:blocks.fix_tx_heights (python3.8)",
       "invokeTarget": {
         "target": "code",
@@ -15,7 +36,7 @@
           "json": {
             "stageVariables": {
               "REGION_NAME": "eu-central-q"
-            },
+            }
           }
         },
         "environmentVariables": {}
