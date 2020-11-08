@@ -49,7 +49,6 @@ class Parser:
         self.batch_transactions = []
         self.vouts = {}
 
-        self.vouts_last_key = None
         self.vouts_collected = False
 
     async def emergency_stop_loop(self, title, error):
@@ -276,10 +275,12 @@ class Parser:
         await self.save_vouts(data['vouts'])
 
         while 'LastEvaluatedKey' in data:
+            
             data = await self.get_vouts(last_key=data['LastEvaluatedKey'])
             if 'vouts' in data:
                 await self.save_vouts(data['vouts'])
             else:
+                print("DATA", data)
                 print('ERR', data)
             # ERR {'error': 'bad request', 'headers': {'Access-Control-Allow-Origin': '*'}, 'message': "'LastEvaluatedKey'"}
         self.vouts_collected = True

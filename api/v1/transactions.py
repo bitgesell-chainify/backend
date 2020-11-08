@@ -29,10 +29,14 @@ def send_raw_transaction(event, context):
             'method': 'sendrawtransaction',
             'params': [hexstring]
         }
+        # response = requests.post(
+        #     'http://161.35.123.34:8332',
+        #     json=params,
+        #     auth=HTTPBasicAuth('bgl_user', '12345678')
+        # )
         response = requests.post(
             'http://161.35.123.34:8332',
-            json=params,
-            auth=HTTPBasicAuth('bgl_user', '12345678')
+            json=params
         )
 
         # print('response', response, response.content, response.status_code)
