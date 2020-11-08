@@ -1,0 +1,33 @@
+version: "2"
+
+services:
+  bitgesell:
+    build: .
+    image: chainify/bitgesell-node
+    container_name: bitgesell-node
+    volumes:
+      - ~/.BGL:/root/.BGL
+    ports:
+      - 0.0.0.0:8455:8455
+    restart: unless-stopped
+    command: bash -c "BGLd -server -rest"
+
+  parser:
+    build: ./parser
+    image: chainify/bitgesell-parser
+    container_name: bitgesell-parser
+    volumes:
+      - ./parser:/opt
+      - ~/.aws:/root/.aws
+    depends_on:
+      - bitgesell
+    environment:
+      - ENV=${ENV}
+      - NODE_URL=${NODE_URL}
+      - NODE_PORT=${NODE_PORT}
+      - NODE_USER=${NODE_USER}
+      - NODE_PASSWORD=${NODE_PASSWORD}
+      - START_HEIGHT=1
+      - END_HEIGHT=10000
+    restart: unless-stopped
+    command: bash -c "python3.7 server.py"

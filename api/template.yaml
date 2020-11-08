@@ -1,0 +1,164 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Parameters:
+  RegionName:
+    Type: String
+    Default: "eu-central-1"
+
+Globals:
+  Api:
+    OpenApiVersion: 3.0.1
+    Auth:
+      ApiKeyRequired: true
+    Cors:
+      AllowMethods: "'POST, GET, PUT, DELETE, OPTIONS'"
+      AllowHeaders: "'*'"
+      AllowOrigin: "'*'"
+  Function:
+    Timeout: 300
+    MemorySize: 2048
+
+Resources:
+  SendRawTransactionFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./v1
+      Handler: transactions.send_raw_transaction
+      Runtime: python3.8
+      Role: arn:aws:iam::094102247400:role/CNFYDynamoBDFullAccessRole
+      Layers:
+        - arn:aws:lambda:eu-central-1:094102247400:layer:boto3-requests-layer:1
+      Events:
+        PostEvent:
+          Type: Api
+          Properties:
+            Path: /v1/blockchain/tx
+            Method: post
+            RestApiId: !Ref BitgesellApi
+
+  GetVoutsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./v1
+      Handler: transactions.get_vouts
+      Runtime: python3.8
+      Role: arn:aws:iam::094102247400:role/CNFYDynamoBDFullAccessRole
+      Layers:
+        - arn:aws:lambda:eu-central-1:094102247400:layer:boto3-requests-layer:1
+      Events:
+        GetEvent:
+          Type: Api
+          Properties:
+            Path: /v1/utils/vouts
+            Method: get
+            RestApiId: !Ref BitgesellApi
+
+  GetLastSavedBlockHeightFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./v1
+      Handler: blocks.get_last_saved_block_height
+      Runtime: python3.8
+      Role: arn:aws:iam::094102247400:role/CNFYDynamoBDFullAccessRole
+      Layers:
+        - arn:aws:lambda:eu-central-1:094102247400:layer:boto3-requests-layer:1
+      Events:
+        GetEvent:
+          Type: Api
+          Properties:
+            Path: /v1/utils/last-saved-block-height
+            Method: get
+            RestApiId: !Ref BitgesellApi
+
+  GetTransactionsByAddressFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./v1
+      Handler: transactions.get_transactions_by_address
+      Runtime: python3.8
+      Role: arn:aws:iam::094102247400:role/CNFYDynamoBDFullAccessRole
+      Layers:
+        - arn:aws:lambda:eu-central-1:094102247400:layer:boto3-requests-layer:1
+      Events:
+        GetEvent:
+          Type: Api
+          Properties:
+            Path: /v1/address/{address}
+            Method: get
+            RestApiId: !Ref BitgesellApi
+
+  FixTxHeightsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./v1
+      Handler: blocks.fix_tx_heights
+      Runtime: python3.8
+      Role: arn:aws:iam::094102247400:role/CNFYDynamoBDFullAccessRole
+      Layers:
+        - arn:aws:lambda:eu-central-1:094102247400:layer:boto3-requests-layer:1
+      Events:
+        PostEvent:
+          Type: Api
+          Properties:
+            Path: /v1/utils/fix-tx-heights
+            Method: post
+            RestApiId: !Ref BitgesellApi
+
+  BitgesellApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: Bitgesell API
+      StageName: Development
+      Variables:
+        REGION_NAME: !Ref RegionName
+
+  DynamoDBTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      KeySchema: 
+      - AttributeName: PK
+        KeyType: HASH
+      - AttributeName: SK
+        KeyType: RANGE
+      AttributeDefinitions:
+      - AttributeName: "PK"
+        AttributeType: "S"
+      - AttributeName: "SK"
+        AttributeType: "S"
+      - AttributeName: "address"
+        AttributeType: "S"
+      - AttributeName: "timestamp"
+        AttributeType: "N"
+      - AttributeName: "partition"
+        AttributeType: "S"
+      - AttributeName: "height"
+        AttributeType: "N"
+      GlobalSecondaryIndexes:
+      - IndexName: ByAddress
+        KeySchema: 
+        - AttributeName: address
+          KeyType: HASH
+        - AttributeName: timestamp
+          KeyType: RANGE
+        Projection: 
+          ProjectionType: ALL
+      - IndexName: SortByPK
+        KeySchema: 
+        - AttributeName: SK
+          KeyType: HASH
+        - AttributeName: PK
+          KeyType: RANGE
+        Projection:
+          ProjectionType: ALL
+      - IndexName: ByHeight
+        KeySchema:
+        - AttributeName: partition
+          KeyType: HASH
+        - AttributeName: height
+          KeyType: RANGE
+        Projection:
+          ProjectionType: ALL
+
+      TableName: BitgesellDB
+      BillingMode: PAY_PER_REQUEST
